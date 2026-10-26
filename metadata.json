@@ -1,0 +1,6 @@
+{
+  "name": "Space Marine: Tyranid Hive Purge",
+  "description": "Pixel-style survivor horde game where an Ultramarine defends a ruined Imperial Hive City against relentless Tyranid swarms.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,20 @@
+{
+  "name": "Warhammer 40K: Space Marine Hive Purge",
+  "short_name": "SM Hive Purge",
+  "description": "Pixel-art Warhammer 40k Space Marine action survivor horde game. Purge the Tyranid swarm on Mobile & Desktop.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#020617",
+  "theme_color": "#020617",
+  "categories": ["games", "action", "arcade"],
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

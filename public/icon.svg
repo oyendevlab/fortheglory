@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="45%" r="60%">
+      <stop offset="0%" stop-color="#1e3a8a" />
+      <stop offset="65%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#020617" />
+    </radialGradient>
+    <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fef08a" />
+      <stop offset="50%" stop-color="#f59e0b" />
+      <stop offset="100%" stop-color="#b45309" />
+    </linearGradient>
+    <linearGradient id="visor" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ef4444" />
+      <stop offset="50%" stop-color="#fca5a5" />
+      <stop offset="100%" stop-color="#ef4444" />
+    </linearGradient>
+  </defs>
+
+  <!-- Rounded App Icon Background -->
+  <rect width="512" height="512" rx="108" fill="url(#bg)" />
+  <rect x="16" y="16" width="480" height="480" rx="94" fill="none" stroke="url(#gold)" stroke-width="12" />
+
+  <!-- Imperial Aquila Wings Backdrop -->
+  <path d="M56 210 L170 175 L155 215 L72 245 Z" fill="url(#gold)" opacity="0.85" />
+  <path d="M76 260 L165 228 L155 262 L92 286 Z" fill="url(#gold)" opacity="0.7" />
+  <path d="M456 210 L342 175 L357 215 L440 245 Z" fill="url(#gold)" opacity="0.85" />
+  <path d="M436 260 L347 228 L357 262 L420 286 Z" fill="url(#gold)" opacity="0.7" />
+
+  <!-- Space Marine Mk X Helmet Silhouette -->
+  <path d="M166 170 C166 110, 346 110, 346 170 L362 325 L312 396 L200 396 L150 325 Z" fill="#1d4ed8" stroke="#60a5fa" stroke-width="10" />
+  <!-- Helmet Crest -->
+  <rect x="236" y="96" width="40" height="72" rx="8" fill="url(#gold)" />
+  <!-- Glowing Red Eye Lenses -->
+  <polygon points="175,232 238,246 232,268 170,254" fill="url(#visor)" />
+  <polygon points="337,232 274,246 280,268 342,254" fill="url(#visor)" />
+  <!-- Vox Grille Mouthpiece -->
+  <polygon points="256,268 310,336 286,386 226,386 202,336" fill="#0f172a" stroke="#93c5fd" stroke-width="6" />
+  <line x1="234" y1="312" x2="278" y2="312" stroke="#64748b" stroke-width="6" />
+  <line x1="226" y1="334" x2="286" y2="334" stroke="#64748b" stroke-width="6" />
+  <line x1="226" y1="356" x2="286" y2="356" stroke="#64748b" stroke-width="6" />
+
+  <!-- Ultramarines Omega Emblem at Bottom -->
+  <text x="256" y="458" font-family="serif" font-weight="900" font-size="56" fill="url(#gold)" text-anchor="middle">Ω 40K</text>
+</svg>
