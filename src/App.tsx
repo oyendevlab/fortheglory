@@ -437,6 +437,11 @@ export default function App() {
     engine.gameFeel = gameFeel;
     engineRef.current = engine;
 
+    if (typeof window !== 'undefined' && window.location.search.includes('autostart=1')) {
+      engine.startNewGame('ultramarines', 'cathedral_ruins', armory, 'normal', 'mk7_aquila');
+      setGameState('PLAYING');
+    }
+
     return () => {
       engine.destroy();
       sounds.stopBgm();

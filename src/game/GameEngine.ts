@@ -379,6 +379,10 @@ export class GameEngine {
   public isMouseDown: boolean = false;
   private keysPressed: Set<string> = new Set();
 
+  // Dynamic Tactical Camera Zoom (Adaptive zoom based on Tyranid Swarm density & Boss presence)
+  public cameraZoom: number = 1.0;
+  public targetCameraZoom: number = 1.0;
+
   constructor(canvas: HTMLCanvasElement, callbacks: GameEngineCallbacks) {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d')!;
@@ -579,8 +583,8 @@ export class GameEngine {
       this.mouseScreenY = e.clientY;
       const w = this.canvas.width;
       const h = this.canvas.height;
-      this.mouseWorldX = this.playerX + (e.clientX - w / 2);
-      this.mouseWorldY = this.playerY + (e.clientY - h / 2);
+      this.mouseWorldX = this.playerX + (e.clientX - w / 2) / this.cameraZoom;
+      this.mouseWorldY = this.playerY + (e.clientY - h / 2) / this.cameraZoom;
 
       // In manual/hybrid mode, face towards mouse cursor
       if (this.aimMode !== 'auto' && this.state === 'PLAYING') {
@@ -1635,8 +1639,55 @@ export class GameEngine {
     this.animId = requestAnimationFrame(this.gameLoop.bind(this));
   }
 
+  /**
+   * Auto-Dynamic Tactical Zoom
+   * Automatically adapts camera scale according to Tyranid swarm density, active Hive Events, and Bosses.
+   * - Few enemies: Crisp & focused action zoom (1.08x, but never claustrophobic).
+   * - Moderate enemies: Balanced battlefield view (1.00x).
+   * - Dense Swarm / Horde waves / Bosses: Panoramic macro view (0.72x - 0.78x) so threats from all sides are clearly seen.
+   */
+  private updateCameraZoom(dt: number) {
+    const enemyCount = this.enemies.length;
+    let desiredZoom = 1.08;
+
+    if (enemyCount <= 5) {
+      desiredZoom = 1.08;
+    } else if (enemyCount <= 15) {
+      const t = (enemyCount - 5) / 10;
+      desiredZoom = 1.08 - t * 0.08; // 1.08 -> 1.00
+    } else if (enemyCount <= 35) {
+      const t = (enemyCount - 15) / 20;
+      desiredZoom = 1.00 - t * 0.12; // 1.00 -> 0.88
+    } else if (enemyCount <= 60) {
+      const t = (enemyCount - 35) / 25;
+      desiredZoom = 0.88 - t * 0.10; // 0.88 -> 0.78
+    } else {
+      const t = Math.min(1, (enemyCount - 60) / 40);
+      desiredZoom = 0.78 - t * 0.08; // 0.78 -> 0.70
+    }
+
+    // Additional tactical zoom-out when Boss or Elite creatures are on field
+    const hasBoss = this.enemies.some(e => e.isBoss || e.type === 'carnifex' || e.type === 'zoanthrope');
+    if (hasBoss) {
+      desiredZoom -= 0.06;
+    }
+
+    // Additional zoom-out during Dynamic Hive Events (Swarm surges, Spore fog)
+    if (this.activeHiveEvent) {
+      desiredZoom -= 0.04;
+    }
+
+    // Clamp within safe limits [0.70, 1.10]
+    this.targetCameraZoom = Math.max(0.70, Math.min(1.10, desiredZoom));
+
+    // Smooth cinematic lerp (interpolates gently to prevent motion sickness)
+    const lerpRate = 1.8;
+    this.cameraZoom += (this.targetCameraZoom - this.cameraZoom) * Math.min(1, dt * lerpRate);
+  }
+
   private update(dt: number) {
     this.elapsedGameTime += dt;
+    this.updateCameraZoom(dt);
     if (this.maxGameTime > 0) {
       this.remainingTime = Math.max(0, this.maxGameTime - this.elapsedGameTime);
       if (this.remainingTime <= 0) {
@@ -1783,10 +1834,10 @@ export class GameEngine {
       currentSpeed *= 1.25; // +25% stimpack burst
     }
 
-    // Keep mouse world position updated as camera moves with player
+    // Keep mouse world position updated as camera moves with player (scaled by tactical camera zoom)
     if (this.aimMode !== 'auto') {
-      this.mouseWorldX = this.playerX + (this.mouseScreenX - this.canvas.width / 2);
-      this.mouseWorldY = this.playerY + (this.mouseScreenY - this.canvas.height / 2);
+      this.mouseWorldX = this.playerX + (this.mouseScreenX - this.canvas.width / 2) / this.cameraZoom;
+      this.mouseWorldY = this.playerY + (this.mouseScreenY - this.canvas.height / 2) / this.cameraZoom;
     }
 
     if (this.isDashing) {
@@ -4392,7 +4443,7 @@ export class GameEngine {
 
   private spawnSingleEnemy() {
     const angle = Math.random() * Math.PI * 2;
-    const spawnDist = Math.max(this.canvas.width, this.canvas.height) * 0.65 + 50;
+    const spawnDist = (Math.max(this.canvas.width, this.canvas.height) / this.cameraZoom) * 0.58 + 60;
     const x = this.playerX + Math.cos(angle) * spawnDist;
     const y = this.playerY + Math.sin(angle) * spawnDist;
 
@@ -5866,22 +5917,25 @@ export class GameEngine {
     const shakeMult = this.gameFeel.screenShake === 'off' ? 0 : (this.gameFeel.screenShake === 'low' ? 0.38 : 1.0);
     const traumaShake = this.shakeTrauma * this.shakeTrauma;
     const totalShake = (traumaShake * 24 + this.screenShakeAmount * 0.45) * shakeMult;
+    let shakeX = 0;
+    let shakeY = 0;
+    let rot = 0;
     if (totalShake > 0.05) {
-      const sx = (Math.random() - 0.5) * totalShake * 1.6;
-      const sy = (Math.random() - 0.5) * totalShake * 1.6;
-      const rot = (Math.random() - 0.5) * 0.02 * traumaShake * shakeMult;
-      ctx.translate(w / 2, h / 2);
-      ctx.rotate(rot);
-      ctx.translate(-w / 2 + sx, -h / 2 + sy);
+      shakeX = (Math.random() - 0.5) * totalShake * 1.6;
+      shakeY = (Math.random() - 0.5) * totalShake * 1.6;
+      rot = (Math.random() - 0.5) * 0.02 * traumaShake * shakeMult;
     }
 
-    // Camera Center
-    const camX = Math.floor(w / 2 - this.playerX);
-    const camY = Math.floor(h / 2 - this.playerY);
-    ctx.translate(camX, camY);
+    // Camera Center & Auto-Dynamic Tactical Zoom
+    ctx.translate(w / 2 + shakeX, h / 2 + shakeY);
+    if (rot !== 0) {
+      ctx.rotate(rot);
+    }
+    ctx.scale(this.cameraZoom, this.cameraZoom);
+    ctx.translate(-Math.floor(this.playerX), -Math.floor(this.playerY));
 
-    // 1. Dynamic Map Floor according to selected theme
-    PixelRenderer.drawMapFloor(ctx, this.playerX, this.playerY, w, h, this.mapTheme);
+    // 1. Dynamic Map Floor according to selected theme (viewport scaled by zoom)
+    PixelRenderer.drawMapFloor(ctx, this.playerX, this.playerY, w / this.cameraZoom, h / this.cameraZoom, this.mapTheme);
 
     // 1.2 Persistent Battlefield Decal Layer (permanent xenos blood & blast scorch marks)
     if (this.decalCanvas) {
@@ -5889,8 +5943,10 @@ export class GameEngine {
     }
 
     // 1.5 Battlefield Structures & Tactical Cover Obstacles
+    const viewHalfW = (w / this.cameraZoom) * 0.75;
+    const viewHalfH = (h / this.cameraZoom) * 0.75;
     for (const obs of this.obstacles) {
-      if (Math.abs(obs.x - this.playerX) < w * 0.75 && Math.abs(obs.y - this.playerY) < h * 0.75) {
+      if (Math.abs(obs.x - this.playerX) < viewHalfW && Math.abs(obs.y - this.playerY) < viewHalfH) {
         PixelRenderer.drawMapObstacle(ctx, obs, this.elapsedGameTime);
       }
     }
@@ -6416,8 +6472,8 @@ export class GameEngine {
       }
     }
 
-    const halfW = w / 2 - 48;
-    const halfH = h / 2 - 58;
+    const halfW = (w / 2 - 48) / this.cameraZoom;
+    const halfH = (h / 2 - 58) / this.cameraZoom;
 
     ctx.save();
     ctx.font = 'bold 11px monospace';
